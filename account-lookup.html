@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수강 계정 조회 | 한신대학교 × 특성화고 NCS 직업기초능력 마스터</title>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --bg:#F4F7F5;
+    --card:#FFFFFF;
+    --ink:#1B241F;
+    --muted:#7B857E;
+    --line:#E1E8E3;
+    --green:#1F6F4A;
+    --green-deep:#154F35;
+    --mint:#DFF0E6;
+    --red:#C24343;
+    --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 100% -10%, #EAF3EC 0%, transparent 60%),
+      var(--bg);
+    font-family:'Pretendard', -apple-system, sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .wrap{ width:100%; max-width:420px; }
+
+  .eyebrow{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:700; letter-spacing:0.08em;
+    color:var(--green-deep); text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--green); }
+
+  h1{
+    font-size:22px; font-weight:800; margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    font-size:13.5px; color:var(--muted); margin:0 0 24px; line-height:1.5;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:20px;
+    box-shadow:0 1px 2px rgba(20,40,30,0.04), 0 12px 32px -18px rgba(20,40,30,0.18);
+  }
+
+  label{
+    display:block; font-size:12.5px; font-weight:700; color:var(--green-deep);
+    margin-bottom:8px;
+  }
+
+  .input-row{ display:flex; gap:8px; }
+
+  input[type=tel]{
+    flex:1;
+    font-family:var(--mono);
+    font-size:16px;
+    letter-spacing:0.02em;
+    padding:13px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    outline:none;
+    background:#FBFDFC;
+    transition:border-color .15s, background .15s;
+  }
+  input[type=tel]:focus{ border-color:var(--green); background:#fff; }
+
+  button{
+    appearance:none; border:none; cursor:pointer;
+    background:var(--green);
+    color:#fff; font-weight:700; font-size:14.5px;
+    padding:0 20px; border-radius:10px;
+    transition:background .15s, transform .05s;
+  }
+  button:hover{ background:var(--green-deep); }
+  button:active{ transform:scale(0.98); }
+  button:disabled{ background:#B9C4BE; cursor:not-allowed; }
+
+  .hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+
+  /* result */
+  .result{
+    margin-top:18px;
+    border-radius:12px;
+    overflow:hidden;
+    position:relative;
+    display:none;
+  }
+  .result.show{ display:block; animation:rise .25s ease; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .result-inner{
+    background:var(--mint);
+    border:1px solid #C7E3D2;
+    border-radius:12px;
+    padding:18px;
+    position:relative;
+    overflow:hidden;
+  }
+  .scan{
+    position:absolute; left:0; right:0; top:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--green) 40%, #7FD4A8 50%, var(--green) 60%, transparent);
+    animation:scan .9s ease-out;
+  }
+  @keyframes scan{ from{ top:0; opacity:1;} to{ top:100%; opacity:0;} }
+
+  .row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 0;
+    border-bottom:1px dashed #BFE0CC;
+    font-size:14px;
+  }
+  .row:last-child{ border-bottom:none; }
+  .row .k{ color:var(--green-deep); font-weight:700; font-size:12.5px; }
+  .row .v{ font-family:var(--mono); font-weight:600; letter-spacing:0.02em; }
+
+  .pw-toggle{
+    background:none; border:none; color:var(--green-deep);
+    font-size:11.5px; font-weight:700; text-decoration:underline;
+    padding:0; cursor:pointer;
+  }
+
+  .not-found{
+    margin-top:18px; display:none;
+    background:#FBEAEA; border:1px solid #EFC6C6; color:var(--red);
+    border-radius:12px; padding:14px 16px; font-size:13.5px; line-height:1.5;
+  }
+  .not-found.show{ display:block; }
+
+  .footer-note{
+    text-align:center; font-size:11.5px; color:var(--muted);
+    margin-top:18px; line-height:1.6;
+  }
+
+  /* notice card (안내문 본문) */
+  .notice-card p{
+    font-size:14px; line-height:1.65; color:var(--ink);
+    margin:0 0 12px;
+  }
+  .notice-card .lead{
+    font-weight:700; color:var(--green-deep);
+  }
+  .deadline{
+    color:var(--red);
+  }
+  .notice-card .asterisk{
+    font-size:12.5px; color:var(--muted);
+    background:#F4F7F5; border-radius:8px; padding:10px 12px;
+    line-height:1.55;
+  }
+  .notice-card .closing{
+    font-size:13px; color:var(--muted); margin-bottom:0;
+  }
+  .notice-link{
+    display:inline-block;
+    font-size:12.5px; font-weight:700;
+    color:#fff; background:var(--green);
+    padding:10px 16px; border-radius:8px;
+    text-decoration:none;
+    margin:0 0 14px;
+    transition:background .15s;
+  }
+  .notice-link:hover{ background:var(--green-deep); }
+  .notice-link.kakao{ background:#3C1E1E; }
+  .notice-link.kakao:hover{ background:#241111; }
+
+  .divider{
+    display:flex; align-items:center; gap:10px;
+    margin:22px 0 14px;
+    font-size:12.5px; font-weight:700; color:var(--green-deep);
+    text-align:center;
+  }
+  .divider::before, .divider::after{
+    content:''; flex:1; height:1px; background:var(--line);
+  }
+  .divider span{ white-space:nowrap; }
+  .divider.first{ margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow"><span class="dot"></span>한신대학교 × 특성화고 NCS 직업기초능력 마스터</div>
+
+  <div class="divider first"><span>LMS 접속 아이디 · 비밀번호를 모르시나요?</span></div>
+
+  <div class="card">
+    <label for="phone">휴대폰 번호</label>
+    <div class="input-row">
+      <input id="phone" type="tel" placeholder="01012345678" maxlength="11" autocomplete="off" inputmode="numeric">
+      <button id="searchBtn">조회</button>
+    </div>
+    <div class="hint">가입 시 등록한 번호 전체를 입력해주세요.</div>
+
+    <div class="result" id="result">
+      <div class="result-inner">
+        <div class="scan" id="scan"></div>
+        <div class="row"><span class="k">이름</span><span class="v" id="rName">-</span></div>
+        <div class="row"><span class="k">학교 / 학년</span><span class="v" id="rSchool">-</span></div>
+        <div class="row"><span class="k">아이디</span><span class="v" id="rId">-</span></div>
+        <div class="row">
+          <span class="k">비밀번호</span>
+          <span>
+            <span class="v" id="rPw">••••••••</span>
+            <button class="pw-toggle" id="pwToggle">표시</button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="not-found" id="notFound">
+      일치하는 정보를 찾을 수 없습니다. 번호를 다시 확인하시거나 담당 실장에게 문의해주세요.
+    </div>
+  </div>
+
+  <div class="card notice-card">
+    <p class="lead">안녕하세요! 학생 여러분, NCS 온라인 특강 수강기한이 얼마 남지 않았습니다!</p>
+    <p>아직 수강을 완료하지 않은 학생들은 한신대학교 LMS에 접속하여
+      <b class="deadline">8월 15일까지</b> 반드시 수강을 완료해 주세요.</p>
+
+    <a class="notice-link" href="https://sso2.hs.ac.kr/" target="_blank" rel="noopener">
+      수강사이트 바로가기 (sso2.hs.ac.kr) ↗
+    </a>
+
+    <p class="asterisk">* 5개 영역의 이론 및 문제풀이 강의를 모두 수강해야 수료증이 발급되므로,
+      LMS에 접속하여 본인의 수강 현황을 꼭 확인하고 남은 강의를 기한 내 모두 수강해 주세요!</p>
+
+    <p>8월 15일까지 수강이 어려운 학생은 그릿마인드랩 카카오톡 채널로 꼭 연락 바랍니다.</p>
+
+    <a class="notice-link kakao" href="http://pf.kakao.com/_Xrsgxb/chat" target="_blank" rel="noopener">
+      문의 (카카오톡 채널) ↗
+    </a>
+
+    <p class="closing">수료증 발급에 불이익이 없도록 꼭! 기한 내 수강 완료해 주세요! ^^</p>
+  </div>
+
+  <div class="footer-note">조회 기록은 저장되지 않습니다 · 본인 확인 후 이용해주세요</div>
+</div>
+
+<script>
+  // ▼▼▼ Apps Script 웹앱 배포 후 발급되는 URL을 여기에 붙여넣으세요 ▼▼▼
+  const SCRIPT_URL = "https://script.google.com/a/macros/gritmindlab.com/s/AKfycbyi7_ZrWkECmOqZ7ON4v_KH9M0J-MAHIDYxg4pWHfcCubpWWaHWU65xwQo-B_xsf9-R/exec";
+  // ▲▲▲ ------------------------------------------------- ▲▲▲
+
+  const phoneInput = document.getElementById('phone');
+  const searchBtn  = document.getElementById('searchBtn');
+  const resultBox  = document.getElementById('result');
+  const notFound   = document.getElementById('notFound');
+  const scanEl     = document.getElementById('scan');
+
+  // 01012345678 형태, 숫자만 허용 (하이픈 없음)
+  phoneInput.addEventListener('input', () => {
+    phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 11);
+  });
+  phoneInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+  searchBtn.addEventListener('click', doSearch);
+
+  let pwVisible = false;
+  let currentPw = '';
+  document.getElementById('pwToggle').addEventListener('click', () => {
+    pwVisible = !pwVisible;
+    document.getElementById('rPw').textContent = pwVisible ? currentPw : '•'.repeat(Math.max(currentPw.length, 8));
+    document.getElementById('pwToggle').textContent = pwVisible ? '숨기기' : '표시';
+  });
+
+  async function doSearch() {
+    const digits = phoneInput.value.replace(/[^0-9]/g, '');
+    resultBox.classList.remove('show');
+    notFound.classList.remove('show');
+
+    if (digits.length < 10) {
+      notFound.textContent = '휴대폰 번호 전체를 정확히 입력해주세요.';
+      notFound.classList.add('show');
+      return;
+    }
+    if (SCRIPT_URL.includes('YOUR_APPS_SCRIPT')) {
+      notFound.textContent = '아직 데이터 연동이 설정되지 않았습니다 (SCRIPT_URL 미설정).';
+      notFound.classList.add('show');
+      return;
+    }
+
+    searchBtn.disabled = true;
+    searchBtn.textContent = '조회 중...';
+
+    try {
+      const res = await fetch(`${SCRIPT_URL}?phone=${digits}`);
+      const data = await res.json();
+
+      if (data && data.found) {
+        document.getElementById('rName').textContent = data.name || '-';
+        document.getElementById('rSchool').textContent = `${data.school || '-'} / ${data.grade || '-'}학년`;
+        document.getElementById('rId').textContent = data.id || '-';
+        currentPw = String(data.pw || '');
+        pwVisible = false;
+        document.getElementById('rPw').textContent = '•'.repeat(Math.max(currentPw.length, 8));
+        document.getElementById('pwToggle').textContent = '표시';
+
+        resultBox.classList.add('show');
+        // scan 애니메이션 재시작
+        scanEl.style.animation = 'none';
+        void scanEl.offsetWidth;
+        scanEl.style.animation = '';
+      } else {
+        notFound.textContent = '일치하는 정보를 찾을 수 없습니다. 번호를 다시 확인하시거나 담당 실장에게 문의해주세요.';
+        notFound.classList.add('show');
+      }
+    } catch (err) {
+      notFound.textContent = '조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      notFound.classList.add('show');
+    } finally {
+      searchBtn.disabled = false;
+      searchBtn.textContent = '조회';
+    }
+  }
+</script>
+
+</body>
+</html>
